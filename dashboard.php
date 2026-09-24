@@ -239,6 +239,7 @@ function coverColor($id) {
       <div class="quick-actions">
         <a href="tambah.php" class="quick-btn"><span class="icon">➕</span> Tambah Buku</a>
         <a href="buku.php" class="quick-btn"><span class="icon">📖</span> Data Buku</a>
+        <a href="json_viewer.php" class="quick-btn"><span class="icon">🔌</span> Lihat JSON API</a>
         <a href="export_excel.php" class="quick-btn"><span class="icon">📊</span> Export Excel</a>
         <a href="export_pdf.php" class="quick-btn"><span class="icon">📄</span> Export PDF</a>
       </div>
@@ -299,14 +300,13 @@ function konfirmasiLogout(e) {
 
 // ================== CHART ==================
 const warnaPastel = ['#8fa998','#a8c0b0','#c9d6cd','#d4b483','#c98a8a','#9eb5c2','#b8a8c9','#a8c9b5','#d4c9a8','#c9b8a8'];
-const maxTahunVal = <?= $maxTahun ?>; // nilai max dari PHP
+const maxTahunVal = <?= $maxTahun ?>;
 
 let chartKategori, chartTahun;
 function textColor() { return document.body.classList.contains('dark') ? '#d8e0da' : '#3d4a42'; }
 function gridColor() { return document.body.classList.contains('dark') ? '#4e5c52' : '#e0e6e0'; }
 
 function initCharts() {
-  // ==== DOUGHNUT: Buku per Kategori ====
   chartKategori = new Chart(document.getElementById('chartKategori'), {
     type: 'doughnut',
     data: {
@@ -321,25 +321,20 @@ function initCharts() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      layout: {
-        padding: { top: 10, bottom: 5 }
-      },
+      layout: { padding: { top: 10, bottom: 5 } },
       plugins: {
         legend: {
           position: 'bottom',
           labels: {
             color: textColor(),
             font: { family: 'Segoe UI', size: 12 },
-            padding: 12,
-            boxWidth: 12,
-            boxHeight: 12
+            padding: 12, boxWidth: 12, boxHeight: 12
           }
         }
       }
     }
   });
 
-  // ==== BAR: Buku per Tahun ====
   chartTahun = new Chart(document.getElementById('chartTahun'), {
     type: 'bar',
     data: {
@@ -357,15 +352,12 @@ function initCharts() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      layout: {
-        padding: { top: 20, right: 10, left: 5, bottom: 5 }
-      },
+      layout: { padding: { top: 20, right: 10, left: 5, bottom: 5 } },
       plugins: {
         legend: { display: false },
         tooltip: {
           backgroundColor: 'rgba(61, 74, 66, 0.95)',
-          padding: 10,
-          cornerRadius: 8,
+          padding: 10, cornerRadius: 8,
           titleFont: { size: 13, weight: 'bold' },
           bodyFont: { size: 12 }
         }
@@ -375,20 +367,17 @@ function initCharts() {
           ticks: {
             color: textColor(),
             font: { size: 11 },
-            maxRotation: 0,
-            autoSkip: false
+            maxRotation: 0, autoSkip: false
           },
           grid: { display: false },
           border: { display: false }
         },
         y: {
           beginAtZero: true,
-          // Kasih ruang di atas bar tertinggi
           suggestedMax: maxTahunVal + 1,
           ticks: {
             color: textColor(),
-            stepSize: 1,
-            precision: 0,
+            stepSize: 1, precision: 0,
             font: { size: 11 }
           },
           grid: { color: gridColor(), drawBorder: false },
@@ -404,12 +393,10 @@ function updateChartColors(isDark) {
   const grid  = isDark ? '#4e5c52' : '#e0e6e0';
   const border= isDark ? '#3d4a42' : '#ffffff';
 
-  // Doughnut
   chartKategori.options.plugins.legend.labels.color = color;
   chartKategori.data.datasets[0].borderColor = border;
   chartKategori.update();
 
-  // Bar
   chartTahun.options.scales.x.ticks.color = color;
   chartTahun.options.scales.y.ticks.color = color;
   chartTahun.options.scales.y.grid.color = grid;

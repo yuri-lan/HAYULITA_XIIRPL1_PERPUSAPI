@@ -39,7 +39,7 @@ while ($r = mysqli_fetch_assoc($qKat)) $kategoriList[] = $r['kategori'];
 </nav>
 
 <div class="container">
-  <h1>Data Buku</h1>
+  <h1>📖 Data Buku</h1>
 
   <div class="search-box">
     <input type="text" id="searchInput" placeholder="Cari judul, penulis, kategori, atau penerbit...">
@@ -47,20 +47,20 @@ while ($r = mysqli_fetch_assoc($qKat)) $kategoriList[] = $r['kategori'];
 
   <div class="filter-bar">
     <select id="filterKategori">
-      <option value="">Semua Kategori</option>
+      <option value="">📁 Semua Kategori</option>
       <?php foreach ($kategoriList as $k): ?>
         <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
       <?php endforeach; ?>
     </select>
 
     <select id="sortTahun">
-      <option value="">Urut Tahun</option>
+      <option value="">🔢 Urut Tahun</option>
       <option value="asc">Tahun Terlama → Terbaru</option>
       <option value="desc">Tahun Terbaru → Terlama</option>
     </select>
 
     <select id="sortJudul">
-      <option value="">Urut Judul</option>
+      <option value="">🔤 Urut Judul</option>
       <option value="asc">Judul A → Z</option>
       <option value="desc">Judul Z → A</option>
     </select>
@@ -303,30 +303,107 @@ document.getElementById('sortTahun').addEventListener('change', () => applyFilte
 document.getElementById('sortJudul').addEventListener('change', () => applyFilter(true));
 document.getElementById('perPage').addEventListener('change', () => applyFilter(true));
 
-// ================== EXPORT FILTER ==================
+// ================== EXPORT HASIL FILTER (Excel / PDF) ==================
 function exportHasilFilter() {
   if (filteredBooks.length === 0) {
-    Swal.fire({ icon:'info', title:'Tidak ada data', text:'Filter tidak menghasilkan data apapun.', confirmButtonColor:'#8fa998' });
+    Swal.fire({
+      icon: 'info',
+      title: 'Tidak ada data',
+      text: 'Filter tidak menghasilkan data apapun.',
+      confirmButtonColor: '#8fa998'
+    });
     return;
   }
+
+  // Ambil info filter aktif
+  const keyword  = document.getElementById('searchInput').value.trim();
+  const kategori = document.getElementById('filterKategori').value;
+  const sortThn  = document.getElementById('sortTahun').value;
+  const sortJdl  = document.getElementById('sortJudul').value;
+
+  // Bikin keterangan filter
+  let ketFilter = [];
+  if (kategori) ketFilter.push('📁 Kategori: <b>' + kategori + '</b>');
+  if (keyword)  ketFilter.push('🔍 Pencarian: <b>"' + keyword + '"</b>');
+  if (sortThn)  ketFilter.push('🔢 Urut tahun: <b>' + (sortThn === 'asc' ? 'Terlama→Terbaru' : 'Terbaru→Terlama') + '</b>');
+  if (sortJdl)  ketFilter.push('🔤 Urut judul: <b>' + (sortJdl === 'asc' ? 'A→Z' : 'Z→A') + '</b>');
+
+  const htmlFilter = ketFilter.length > 0
+    ? '<div style="background:#f5f7f4;padding:10px 12px;border-radius:8px;font-size:12px;text-align:left;margin:10px 0;line-height:1.7;color:#3d4a42;">' + ketFilter.join('<br>') + '</div>'
+    : '<p style="font-size:13px;color:#7a8a80;margin:10px 0;">Tanpa filter — semua data akan di-export.</p>';
+
   Swal.fire({
-    title: 'Export hasil filter?',
-    html: `Akan export <b>${filteredBooks.length}</b> data ke Excel.`,
-    icon: 'question', showCancelButton: true,
-    confirmButtonText: 'Ya, Export', cancelButtonText: 'Batal',
-    confirmButtonColor: '#8fa998', cancelButtonColor: '#a8c0b0'
-  }).then((res) => {
-    if (!res.isConfirmed) return;
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'export_filter.php';
+    title: '📥 Export Hasil Filter',
+    html: `
+      <p style="font-size:14px;color:#3d4a42;margin-bottom:6px;">
+        Akan export <b style="color:#6f8a7a;">${filteredBooks.length}</b> data.
+      </p>
+      ${htmlFilter}
+      <p style="font-size:13px;color:#7a8a80;margin-top:14px;margin-bottom:6px;">
+        Pilih format export:
+      </p>
+    `,
+    icon: 'question',
+    showCancelButton: true,
+    showDenyButton: true,
+    confirmButtonText: '📊 Excel',
+    denyButtonText: '📄 PDF',
+    cancelButtonText: 'Batal',
+    confirmButtonColor: '#8fa998',
+    denyButtonColor: '#d4b483',
+    cancelButtonColor: '#a8c0b0',
+    reverseButtons: true
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // ==== EXPORT EXCEL ====
+      submitExport('export_filter.php', 'Excel');
+    } else if (result.isDenied) {
+      // ==== EXPORT PDF ====
+      submitExport('export_filter_pdf.php', 'PDF');
+    }
+  });
+}
+
+// Helper: submit form ke server
+function submitExport(action, label) {
+  const keyword  = document.getElementById('searchInput').value.trim();
+  const kategori = document.getElementById('filterKategori').value;
+  const sortThn  = document.getElementById('sortTahun').value;
+  const sortJdl  = document.getElementById('sortJudul').value;
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = action;
+  form.target = '_blank';  // buka di tab baru
+
+  const fields = {
+    data: JSON.stringify(filteredBooks),
+    kategori: kategori,
+    keyword: keyword,
+    sortTahun: sortThn,
+    sortJudul: sortJdl
+  };
+
+  for (const key in fields) {
     const input = document.createElement('input');
     input.type = 'hidden';
-    input.name = 'data';
-    input.value = JSON.stringify(filteredBooks);
+    input.name = key;
+    input.value = fields[key];
     form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
+  }
+
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+
+  // Notif sukses
+  Swal.fire({
+    icon: 'success',
+    title: 'Download Dimulai',
+    text: `File ${label} lagi diproses. Cek folder Download.`,
+    confirmButtonColor: '#8fa998',
+    timer: 2500,
+    showConfirmButton: false
   });
 }
 
